@@ -3,27 +3,34 @@ import swiftclient.client
 from cStringIO import StringIO
 K = 10
 
-def download_bam_from_swift():
+def download_container(container_name, sample):
     config = {
     'user':os.environ['OS_USERNAME'],
     'key':os.environ['OS_PASSWORD'],
     'tenant_name':os.environ['OS_TENANT_NAME'],
     'authurl':os.environ['OS_AUTH_URL']
     }
-    container_name = '1000-genomes-dataset'
     conn = swiftclient.client.Connection(auth_version=3, **config)
     (storage_url, auth_token) = conn.get_auth()
     (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
     bam_files = []
     #### SAMPLES####
-    samples = ['NA19256.chrom20.ILLUMINA.bwa.YRI.low_coverage.20130415.bam', 'NA19257.chrom20.ILLUMINA.bwa.YRI.low_coverage.20130415.bam']
     ################
     for bucket in content:
         filename = bucket['name']
         if filename[-3:] == 'bam' and filename in samples:
-                response_header, file_contents = conn.get_object(container_name, filename)
-                bam_files.append(file_contents)
+                bam_files.append(download_bam_from_swift(conn, container_name, filename))
     return bam_files
+
+def download_bam_from_swift(conn, container_name, filename):
+    while True:
+        try:
+            _, file_contents = conn.get_object(container_name, filename)
+        except Exception as pe:
+            print pe,'\nDownload failed, retrying file: \n', filename
+            continue
+        break
+    return file_contents
 
 def count_kmers(bam):
     indices = range(bam.query_alignment_start, bam.query_alignment_end - (K-1))
@@ -63,7 +70,9 @@ def list_bam_files(directory_path):
     return files
 
 def main():
-    bam_files = download_bam_from_swift()
+    container_name = '1000-genomes-dataset'
+    samples = ['NA19256.chrom20.ILLUMINA.bwa.YRI.low_coverage.20130415.bam', 'NA19257.chrom20.ILLUMINA.bwa.YRI.low_coverage.20130415.bam']
+    bam_files = download_container(container_name, sample)
     print "Downloaded ", len(bam_files), " bam_files"
 
     # Initializing
@@ -71,7 +80,6 @@ def main():
     total_count = 0
     count = 0
     kmers_in_bam = []
-
 
     for b in bam_files:
             f = open('sample.bam', 'wb')
@@ -82,19 +90,11 @@ def main():
             count, kmrs_in_bam = parse_bam_file(bam)
             total_count += count
             kmers = kmers + kmrs_in_bam
-            print "Kmers while looping: ", kmrs_in_bam[5:]
 
-    print 'Total count: ' + str(total_count)
-    print 'Length of kmers list: ' + str(len(kmers))
-    print 'Some K-mers: ', kmers
-    #for bam in list_bam_files('/home/ubuntu/'):
-    #    count, kmers = parse_bam_file(bam)
-        #print count, kmers
-    for bamfile in list_bam_files('/home/ubuntu/LDSA2016/'):
-        c, ks = parse_bam_file(bamfile)
-        print c, ks
-
-    return
+    n = 20
+    print 'First ', n, 'K-mers: \t', kmers[:n]
+    print 'Total count: \t' + str(total_count)
+    print 'Length of kmers list: \n' + str(len(kmers))
 
 if __name__ == '__main__':
     main()
