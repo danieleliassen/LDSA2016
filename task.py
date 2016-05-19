@@ -22,7 +22,8 @@ def count_kmers(bam):
     kmers = []
     for index in indices:
         kmers.append((bam.reference_start + index, bam.query_sequence[index:index+K]))
-        out = str(bam.reference_start + index) + ', ' + str(bam.query_sequence[index:index+K]) + '\n'
+        # Mapping result, value separation by the tab-character.
+        out = str(bam.reference_start + index) + '\t' + str(bam.query_sequence[index:index+K]) + '\t1\n'
         sys.stdout.write(out)
     return (len(indices) - (K-1), kmers)
 
@@ -54,7 +55,7 @@ def list_bam_files(directory_path):
     return files
 
 def main():
-    download_bam_from_swift()
+    #download_bam_from_swift()
     for bam in list_bam_files('/home/ubuntu/'):
         count, kmers = parse_bam_file(bam)
         #print count, kmers
