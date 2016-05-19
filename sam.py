@@ -22,8 +22,8 @@ with pysam.AlignmentFile("HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522
 				num_of_kmers+=1
                         
 
-	for x in range (0, 200):
-		print subs[x]
+	for x in subs:
+		print x
 
 
         print "Number of unmapped sequences: ", num_of_unmapped

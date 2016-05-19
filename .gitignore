@@ -3,7 +3,7 @@
 ACC-Course-openrc.sh
 cloud.key.pub
 cloud.key
-
+*.bam*
 
 # Compiled source #
 ###################
