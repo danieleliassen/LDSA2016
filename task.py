@@ -1,8 +1,20 @@
-import pysam, os
+import pysam, os, sys
+import swiftclient.client
 
 K = 10
 
-
+def download_bam_from_swift():
+    config = {
+    'user':os.environ['OS_USERNAME'],
+    'key':os.environ['OS_PASSWORD'],
+    'tenant_name':os.environ['OS_TENANT_NAME'],
+    'authurl':os.environ['OS_AUTH_URL']
+    }
+    conn = swiftclient.client.Connection(auth_version=2, **config)
+    (storage_url, auth_token) = conn.get_auth()
+    (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
+    for bucket in content:
+    	print bucket
 
 
 def count_kmers(bam):
@@ -10,6 +22,8 @@ def count_kmers(bam):
     kmers = []
     for index in indices:
         kmers.append((bam.reference_start + index, bam.query_sequence[index:index+K]))
+        out = str(bam.reference_start + index) + ', ' + str(bam.query_sequence[index:index+K]) + '\n'
+        sys.stdout.write(out)
     return (len(indices) - (K-1), kmers)
 
 def parse_bam_file(bam):
@@ -40,9 +54,10 @@ def list_bam_files(directory_path):
     return files
 
 def main():
+    download_bam_from_swift()
     for bam in list_bam_files('/home/ubuntu/'):
         count, kmers = parse_bam_file(bam)
-        print count, kmers
+        #print count, kmers
     return
 
 if __name__ == '__main__':
