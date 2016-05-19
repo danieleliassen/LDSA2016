@@ -1,5 +1,10 @@
+from pyspark import SparkContext, SparkConf
 import pysam, os, sys
 import swiftclient.client
+
+
+conf = SparkConf().setAppName("K-mer count")#.setMaster(master)
+sc = SparkContext(conf=conf)
 
 K = 10
 
@@ -64,14 +69,14 @@ def list_bam_files(directory_path):
 def main():
     container_name = '1000-genomes-dataset'
     config = {
-    'user':os.environ['OS_USERNAME'],
-    'key':os.environ['OS_PASSWORD'],
-    'tenant_name':os.environ['OS_TENANT_NAME'],
-    'authurl':os.environ['OS_AUTH_URL']
+    'user': INSERT_USERNAME,
+    'key': INSERT_PASSWORD,
+    'tenant_name': 'c2016015',
+    'authurl': 'http://130.238.29.253:5000/v3'
     }
-    samples = ['NA19256.chrom20.ILLUMINA.bwa.YRI.low_coverage.20130415.bam', 'NA19257.chrom20.ILLUMINA.bwa.YRI.low_coverage.20130415.bam']
-    bam_files = download_container(config, container_name, samples)
-    print "\nDownloaded ", len(bam_files), " bam_files\n"
+    samples = sc.parallelize(['NA19256.chrom20.ILLUMINA.bwa.YRI.low_coverage.20130415.bam', 'NA19257.chrom20.ILLUMINA.bwa.YRI.low_coverage.20130415.bam'])
+    bam_files = samples.map(lambda s: download_container(config, container_name, s))
+    print "\nDownloaded ", bam_files.count(), " bam_files\n"
 
     # Initializing
     kmers = []
