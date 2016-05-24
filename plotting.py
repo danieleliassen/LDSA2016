@@ -6,7 +6,7 @@ import numpy as np
 
 
 class Plotting:
-	def createHeatMap1D(self, xLabel, dataFile, fileName):
+	def createPositionPlot(self, xLabel, dataFile, fileName):
 		chunkSize = 1000
 		lowerThreshold = 10 * chunkSize
 		higherThreshold = 200 * chunkSize
