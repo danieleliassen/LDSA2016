@@ -7,7 +7,7 @@ import numpy as np
 
 class Plotting:
 	def createPositionPlot(self, xLabel, dataFile, fileName):
-		chunkSize = 1000
+		chunkSize = 10000
 		lowerThreshold = 10 * chunkSize
 		higherThreshold = 200 * chunkSize
 
@@ -20,8 +20,10 @@ class Plotting:
 		thresholdFlags = np.logical_and(lowerFlags, higherFlags)
 		filtered_position_vector = position_vector[thresholdFlags]
 		filtered_count_vector = count_vector[thresholdFlags]
+
+		filtered_count_vector = filtered_count_vector / chunkSize
 		
-		print("Filtered out %.2f%%" % ((len(filtered_count_vector) / len(count_vector) * 100)))
+		#print("Filtered out %.2f%%" % ())
 
 		plt.plot(filtered_position_vector, filtered_count_vector, 'b.')
 		plt.savefig(fileName)
