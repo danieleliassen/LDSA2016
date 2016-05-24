@@ -8,7 +8,7 @@ def main():
     spark_context = SparkContext(conf=configuration)
     for item in count_kmers.main(spark_context).collect():
         word, count = item
-        sys.stdout.write("{0}, {1}\n".format(word, count))#'%s, %s\n' % word, count)
+        sys.stdout.write("{0}, {1}\n".format(word, count))
     return
 
 if __name__ == '__main__':
