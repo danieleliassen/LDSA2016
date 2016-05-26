@@ -1,6 +1,12 @@
 # LDSA2016
 Group repo for the project Large datasets for scientific applications. Spring 2016
 
+# Running it
+```
+sudo pyspark main.py [ -f FILE_WITH_URLS | -p LOCAC_PATH_TO_FILES ]
+# Results are saved in the directory $HOME/RESULTS/
+```
+
 ## Various Resources
 Here's some of the information we have found.
 ### K-mers
