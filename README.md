@@ -2,8 +2,8 @@
 Group repo for the project Large datasets for scientific applications. Spring 2016
 
 # Running it
-```bash
-python main.py [ -f FILE_WITH_URLS | -p LOCAC_PATH_TO_FILES ]
+```
+sudo pyspark main.py [ -f FILE_WITH_URLS | -p LOCAC_PATH_TO_FILES ]
 # Results are saved in the directory $HOME/RESULTS/
 ```
 
