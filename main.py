@@ -7,24 +7,10 @@ import pysam
 
 config = {
 'user':'dael1787',
-'key':'Fl1ck4N850912',
+'key':'##',
 'tenant_name':'c2016015',
 'authurl': 'http://130.238.29.253:5000/v3'
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
