@@ -4,6 +4,7 @@ ACC-Course-openrc.sh
 cloud.key.pub
 cloud.key
 *.bam*
+config.py
 
 # Compiled source #
 ###################
