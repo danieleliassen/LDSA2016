@@ -4,13 +4,9 @@ from operator import add
 import swiftclient.client
 import sys
 import pysam
+import config
 
-config = {
-'user':'dael1787',
-'key':'empty',
-'tenant_name':'c2016015',
-'authurl': 'http://130.238.29.253:5000/v3'
-}
+
 
 
 
@@ -61,11 +57,11 @@ def process(filename):
 def main():
     configuration = SparkConf().setAppName("1000-genomes Project")
     spark_context = SparkContext(conf=configuration)
-
+    
     # Initializing variables
     container_name = "1000-genomes-dataset"
 
-    conn = swiftclient.client.Connection(auth_version=3, **config)
+    conn = swiftclient.client.Connection(auth_version=3, **config.main())
     (storage_url, auth_token) = conn.get_auth()
     (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
 
@@ -91,4 +87,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
