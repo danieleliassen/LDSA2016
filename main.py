@@ -48,7 +48,7 @@ def process(filename):
 
     os.remove(local_path)
     return result_list
-#("POSITION", (pos, 1)), ("KMER", (sequence, 1))
+
 def main():
     configuration = SparkConf().setAppName("1000-genomes Project")
     spark_context = SparkContext(conf=configuration)
@@ -63,7 +63,6 @@ def main():
 
     names = filter(lambda name: name[-4:-1] == 'bam', [c['name']+'\n' for c in content[:2]])
 
-#    names = ["HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam","HG00097.chrom20.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"]
     filenames = spark_context.parallelize(names)
     mapped_data = filenames.flatMap(process)#.groupByKey()
     kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add)
@@ -81,3 +80,5 @@ def main():
     pos_file.close()
 
     return
+if __name__ == '__main__':
+    main()
