@@ -1,12 +1,12 @@
 #from __future__ import print_function
 from pyspark import SparkContext, SparkConf
 from operator import add
-import swiftclient.client
+#import swiftclient.client
 import sys
 import pysam
-
-import config
-
+import urllib
+#import config
+import os
 
 
 
@@ -21,7 +21,16 @@ def process(filename):
     result_list = []
     K = 10
     path = "http://130.238.29.253:8080/swift/v1/1000-genomes-dataset/"+filename
-    with pysam.AlignmentFile(path,"rb") as samfile:
+    local_path = "/home/ubuntu/"+filename    
+    
+    for i in range(0,10):
+    	try: 
+            urllib.urlretrieve(path,local_path)
+	    break
+        except:
+	    print "Failed to Download"
+
+    with pysam.AlignmentFile(local_path,"rb") as samfile:
         try:
             data = samfile.fetch(until_eof=True)
             for r in data:
@@ -37,7 +46,7 @@ def process(filename):
             print e
             pass
 
-
+    os.remove(local_path)
     return result_list
 #("POSITION", (pos, 1)), ("KMER", (sequence, 1))
 def main():
@@ -48,12 +57,13 @@ def main():
     # Initializing variables
     container_name = "1000-genomes-dataset"
 
-    conn = swiftclient.client.Connection(auth_version=3, **config.main())
-    (storage_url, auth_token) = conn.get_auth()
-    (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
+ #   conn = swiftclient.client.Connection(auth_version=3, **config.main())
+ #   (storage_url, auth_token) = conn.get_auth()
+ #   (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
 
-    names = filter(lambda name: name[-4:-1] == 'bam', [c['name']+'\n' for c in content[:20]])
+#    names = filter(lambda name: name[-4:-1] == 'bam', [c['name']+'\n' for c in content[:20]])
 
+    names = ["HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam","HG00097.chrom20.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"]
     filenames = spark_context.parallelize(names)
     mapped_data = filenames.flatMap(process)#.groupByKey()
     kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add)
@@ -65,10 +75,10 @@ def main():
     #     print i
     #     l = l+1
     #     if l == 1:
-    #         break
-    for element in positions.collect()[:10]:
+    #         brea:#k
+    for element in positions.collect():#[:10]:
         print(element)
-    for element in kmers.collect()[:10]:
+    for element in kmers.collect():#[:10]:
         print(element)
     return
 
