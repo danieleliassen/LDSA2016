@@ -7,6 +7,7 @@ import pysam
 import urllib
 import config
 import os
+import time
 
 
 
@@ -21,8 +22,9 @@ def process(filename):
     result_list = []
     K = 10
     path = "http://130.238.29.253:8080/swift/v1/1000-genomes-dataset/"+filename
-    local_path = "/home/ubuntu/"+filename    
-    
+    local_path = "/home/ubuntu/"+filename  
+
+    start_time_download = time.time()  
     for i in range(0,10):
     	try: 
             urllib.urlretrieve(path,local_path)
@@ -30,6 +32,7 @@ def process(filename):
         except:
 	    print "Failed to Download"
 
+    start_time_mapping = time.time()  
     with pysam.AlignmentFile(local_path,"rb") as samfile:
         try:
             data = samfile.fetch(until_eof=True)
@@ -46,8 +49,13 @@ def process(filename):
             print e
             pass
 
+    end_time = time.time()
+    result_list.append(('TIME-DOWNLOAD', end_time - start_time_download))
+    result_list.append(('TIME-MAPPING', end_time - start_time_mapping))
+
     os.remove(local_path)
     return result_list
+
 
 def main():
     configuration = SparkConf().setAppName("1000-genomes Project")
@@ -65,9 +73,21 @@ def main():
 
     filenames = spark_context.parallelize(names)
     mapped_data = filenames.flatMap(process)#.groupByKey()
+
+    start_time_filtering = time.time()
     kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add)
-    positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)
-    
+    positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)   
+
+    time_filtering = time.time() - start_time_filtering
+    time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").reduceByKey(add).collect()
+    time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").reduceByKey(add).collect()
+
+    timing_file = open("timing.txt", "w")
+    timing_file.write("Mapping " + time_mapping)
+    timing_file.write("Mapping+Downloading " + time_download)
+    timing_file.write("Filtering " + time_filtering)
+    timing_file.close()
+
     kmer_file = open("kmers.txt", "w")
     for item in kmers.collect():
         print>>kmer_file, item
