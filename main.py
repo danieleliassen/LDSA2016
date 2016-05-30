@@ -1,11 +1,11 @@
 #from __future__ import print_function
 from pyspark import SparkContext, SparkConf
 from operator import add
-#import swiftclient.client
+import swiftclient.client
 import sys
 import pysam
 import urllib
-#import config
+import config
 import os
 
 
@@ -57,30 +57,27 @@ def main():
     # Initializing variables
     container_name = "1000-genomes-dataset"
 
- #   conn = swiftclient.client.Connection(auth_version=3, **config.main())
- #   (storage_url, auth_token) = conn.get_auth()
- #   (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
+    conn = swiftclient.client.Connection(auth_version=3, **config.main())
+    (storage_url, auth_token) = conn.get_auth()
+    (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
 
-#    names = filter(lambda name: name[-4:-1] == 'bam', [c['name']+'\n' for c in content[:20]])
+    names = filter(lambda name: name[-4:-1] == 'bam', [c['name']+'\n' for c in content[:2]])
 
-    names = ["HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam","HG00097.chrom20.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"]
+#    names = ["HG00096.chrom20.ILLUMINA.bwa.GBR.low_coverage.20120522.bam","HG00097.chrom20.ILLUMINA.bwa.GBR.low_coverage.20130415.bam"]
     filenames = spark_context.parallelize(names)
     mapped_data = filenames.flatMap(process)#.groupByKey()
     kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add)
     positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)
+    
+    kmer_file = open("kmers.txt", "w")
+    for item in kmers.collect():
+        print>>kmer_file, item
+    kmer_file.close()
 
-    # mm = positions.collect()
-    # l=0
-    # for i in mm:
-    #     print i
-    #     l = l+1
-    #     if l == 1:
-    #         brea:#k
-    for element in positions.collect():#[:10]:
-        print(element)
-    for element in kmers.collect():#[:10]:
-        print(element)
+
+    pos_file = open("positions.txt", "w")
+    for item in positions.collect():
+        print>>pos_file, item
+    pos_file.close()
+
     return
-
-if __name__ == '__main__':
-    main()
