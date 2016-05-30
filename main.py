@@ -50,8 +50,8 @@ def process(filename):
             pass
 
     end_time = time.time()
-    result_list.append(('TIME-DOWNLOAD', end_time - start_time_download))
-    result_list.append(('TIME-MAPPING', end_time - start_time_mapping))
+    result_list.append(('TIME-DOWNLOAD', (1, end_time - start_time_download)))
+    result_list.append(('TIME-MAPPING', (1, end_time - start_time_mapping)))
 
     os.remove(local_path)
     return result_list
@@ -79,13 +79,16 @@ def main():
     positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)   
 
     time_filtering = time.time() - start_time_filtering
-    time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").reduceByKey(add).collect()
-    time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").reduceByKey(add).collect()
+    time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").map(lambda (k, v): v).reduceByKey(add)
+    time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").map(lambda (k, v): v).reduceByKey(add)
+
+    time_mapping = time_mapping.collect()
+    time_download = time_download.collect() 
 
     timing_file = open("timing.txt", "w")
-    timing_file.write("Mapping " + time_mapping)
-    timing_file.write("Mapping+Downloading " + time_download)
-    timing_file.write("Filtering " + time_filtering)
+    timing_file.write("Mapping " + str(time_mapping) + "\n")
+    timing_file.write("Mapping+Downloading " + str(time_download) + "\n")
+    timing_file.write("Filtering " + str(time_filtering) + "\n")
     timing_file.close()
 
     kmer_file = open("kmers.txt", "w")
