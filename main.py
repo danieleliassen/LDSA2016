@@ -53,7 +53,13 @@ def process(filename):
     result_list.append(('TIME-DOWNLOAD', (1, end_time - start_time_download)))
     result_list.append(('TIME-MAPPING', (1, end_time - start_time_mapping)))
 
-    os.remove(local_path)
+    extensions = ["", "?", "?.csi"]
+    for extension in extensions:
+	try:
+    		os.remove(local_path + extension)
+	except OSError:
+    		pass
+
     return result_list
 
 
