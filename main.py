@@ -13,8 +13,9 @@ import hashlib
 
 
 def process(bam_file):
-    filename, check_sum = bam_file
-
+    filename  = bam_file['name']
+    check_sum = bam_file['hash']
+    print filename, " ", check_sum
     num_of_unmapped = 0
     num_of_kmers = 0
     tabKmers=""
@@ -25,10 +26,12 @@ def process(bam_file):
 
     start_time_download = time.time()  
     for i in range(0,10):
-    	try: 
+    	try:
+	    print "Downloading ", local_path
             urllib.urlretrieve(path,local_path)
             downloaded_check_sum = hashlib.md5(open(local_path, 'rb').read()).hexdigest()
-            if check_sum == downloaded_check_sum:
+            if str(check_sum) == str(downloaded_check_sum):
+		print "Checksum failed ", downloaded_check_sum
                 break
         except:
 	       print "Failed to Download"
@@ -76,9 +79,10 @@ def main():
     conn = swiftclient.client.Connection(auth_version=3, **config.main())
     (storage_url, auth_token) = conn.get_auth()
     (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
-
-    names = filter(lambda name: name[-4:-1] == 'bam', [(c['name'], c['hash']) for c in content[:2]])
-
+    ts = [{"name" : c['name'], "hash" : c['hash']} for c in content[:2]]
+    print "tuple name ", ts[0]['name'][-4:]
+    names = filter(lambda t: t['name'][-4:] == '.bam', ts)
+    print "Length of names ", len(names)
     filenames = spark_context.parallelize(names)
     mapped_data = filenames.flatMap(process)#.groupByKey()
 
