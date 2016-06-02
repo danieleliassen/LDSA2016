@@ -27,12 +27,14 @@ def process(bam_file):
     start_time_download = time.time()  
     for i in range(0,10):
     	try:
-	    print "Downloading ", local_path
+	    print "Downloading ", filename
             urllib.urlretrieve(path,local_path)
             downloaded_check_sum = hashlib.md5(open(local_path, 'rb').read()).hexdigest()
-            if str(check_sum) == str(downloaded_check_sum):
-		print "Checksum failed ", downloaded_check_sum
-                break
+            if str(check_sum) != str(downloaded_check_sum):
+		print "Checksum failed ", downloaded_check_sum, check_sum
+	    else:
+		print "Checksum succeeded"
+		break
         except:
 	       print "Failed to Download"
 
@@ -72,30 +74,30 @@ def main():
     configuration = SparkConf().setAppName("1000-genomes Project")
     spark_context = SparkContext(conf=configuration)
 
-    
+    num_files = 2    
+
     # Initializing variables
     container_name = "1000-genomes-dataset"
 
     conn = swiftclient.client.Connection(auth_version=3, **config.main())
     (storage_url, auth_token) = conn.get_auth()
     (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
-    ts = [{"name" : c['name'], "hash" : c['hash']} for c in content[:2]]
-    print "tuple name ", ts[0]['name'][-4:]
-    names = filter(lambda t: t['name'][-4:] == '.bam', ts)
-    print "Length of names ", len(names)
-    filenames = spark_context.parallelize(names)
+    names = filter(lambda t: t['name'][-4:] == '.bam', content)   
+    filelist = [{"name" : c['name'].strip(), "hash" : c['hash'].strip()} for c in names[:num_files]]
+    
+    filenames = spark_context.parallelize(filelist)
     mapped_data = filenames.flatMap(process)#.groupByKey()
 
     start_time_filtering = time.time()
     kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add)
-    positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)   
+    #positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)   
 
     time_filtering = time.time() - start_time_filtering
-    time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").map(lambda (k, v): v).reduceByKey(add)
-    time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").map(lambda (k, v): v).reduceByKey(add)
+    #time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").map(lambda (k, v): v).reduceByKey(add)
+    #time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").map(lambda (k, v): v).reduceByKey(add)
 
-    time_mapping = time_mapping.collect()
-    time_download = time_download.collect() 
+    time_mapping = None#time_mapping.collect()
+    time_download = None#time_download.collect() 
 
     timing_file = open("timing.txt", "w")
     timing_file.write("Mapping " + str(time_mapping) + "\n")
@@ -109,10 +111,10 @@ def main():
     kmer_file.close()
 
 
-    pos_file = open("positions.txt", "w")
-    for item in positions.collect():
-        print>>pos_file, item
-    pos_file.close()
+    #pos_file = open("positions.txt", "w")
+    #for item in positions.collect():
+    #    print>>pos_file, item
+    #pos_file.close()
 
     return
 if __name__ == '__main__':
