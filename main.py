@@ -86,18 +86,18 @@ def main():
     filelist = [{"name" : c['name'].strip(), "hash" : c['hash'].strip()} for c in names[:num_files]]
     
     filenames = spark_context.parallelize(filelist)
-    mapped_data = filenames.flatMap(process).cache() #.groupByKey()
+    mapped_data = filenames.flatMap(process).cache()
 
     start_time_filtering = time.time()
     kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add)
     positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)   
 
     time_filtering = time.time() - start_time_filtering
-    #time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").map(lambda (k, v): v).reduceByKey(add)
-    #time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").map(lambda (k, v): v).reduceByKey(add)
+    time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").map(lambda (k, v): v).reduceByKey(add)
+    time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").map(lambda (k, v): v).reduceByKey(add)
 
-    time_mapping = None#time_mapping.collect()
-    time_download = None#time_download.collect() 
+    time_mapping = time_mapping.collect()
+    time_download = time_download.collect() 
 
     timing_file = open("timing.txt", "w")
     timing_file.write("Mapping " + str(time_mapping) + "\n")
