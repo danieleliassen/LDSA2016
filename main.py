@@ -86,11 +86,11 @@ def main():
     filelist = [{"name" : c['name'].strip(), "hash" : c['hash'].strip()} for c in names[:num_files]]
     
     filenames = spark_context.parallelize(filelist)
-    mapped_data = filenames.flatMap(process)#.groupByKey()
+    mapped_data = filenames.flatMap(process).cache() #.groupByKey()
 
     start_time_filtering = time.time()
     kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add)
-    #positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)   
+    positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)   
 
     time_filtering = time.time() - start_time_filtering
     #time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").map(lambda (k, v): v).reduceByKey(add)
@@ -111,10 +111,10 @@ def main():
     kmer_file.close()
 
 
-    #pos_file = open("positions.txt", "w")
-    #for item in positions.collect():
-    #    print>>pos_file, item
-    #pos_file.close()
+    pos_file = open("positions.txt", "w")
+    for item in positions.collect():
+        print>>pos_file, item
+    pos_file.close()
 
     return
 if __name__ == '__main__':
