@@ -8,14 +8,13 @@ import urllib
 import config
 import os
 import time
+import hashlib
 
 
 
+def process(bam_file):
+    filename, check_sum = bam_file
 
-
-
-
-def process(filename):
     num_of_unmapped = 0
     num_of_kmers = 0
     tabKmers=""
@@ -28,9 +27,12 @@ def process(filename):
     for i in range(0,10):
     	try: 
             urllib.urlretrieve(path,local_path)
-	    break
+            downloaded_check_sum = hashlib.md5(open(local_path, 'rb').read()).hexdigest()
+            if check_sum == downloaded_check_sum:
+                break
         except:
-	    print "Failed to Download"
+	       print "Failed to Download"
+
 
     start_time_mapping = time.time()  
     with pysam.AlignmentFile(local_path,"rb") as samfile:
@@ -75,7 +77,7 @@ def main():
     (storage_url, auth_token) = conn.get_auth()
     (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
 
-    names = filter(lambda name: name[-4:-1] == 'bam', [c['name']+'\n' for c in content[:2]])
+    names = filter(lambda name: name[-4:-1] == 'bam', [(c['name'], c['hash']) for c in content[:2]])
 
     filenames = spark_context.parallelize(names)
     mapped_data = filenames.flatMap(process)#.groupByKey()
