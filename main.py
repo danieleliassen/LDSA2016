@@ -78,7 +78,7 @@ def main():
     configuration = SparkConf().setAppName("1000-genomes Project")
     spark_context = SparkContext(conf=configuration)
 
-    num_files = 100
+    num_files = 3
 
     # Initializing variables
     container_name = "1000-genomes-dataset"
@@ -115,13 +115,13 @@ def main():
     for item in kmers.collect():
         print>>kmer_file, item
     kmer_file.close()
-
-
     pos_file = open("positions.txt", "w")
     for item in positions.collect():
         print>>pos_file, item
     pos_file.close()
-
+    for obj in [open(f, "r") for f in ["kmers.txt", "positions.txt"]]:
+        swiftclient.client.put_object(url=storage_url, token=auth_token, container="result", name="group_11/" + str(start_time_filtering) + "_" + obj.name, contents=obj)
+        obj.close()
     return
 if __name__ == '__main__':
     main()
