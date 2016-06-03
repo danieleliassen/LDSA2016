@@ -1,5 +1,5 @@
 #from __future__ import print_function
-from pyspark import SparkContext, SparkConf
+from pyspark import SparkContext, SparkConf, StorageLevel
 from operator import add
 import swiftclient.client
 import sys
@@ -15,7 +15,6 @@ import hashlib
 def process(bam_file):
     filename  = bam_file['name']
     check_sum = bam_file['hash']
-    print filename, " ", check_sum
     num_of_unmapped = 0
     num_of_kmers = 0
     tabKmers=""
@@ -23,6 +22,7 @@ def process(bam_file):
     K = 10
     path = "http://130.238.29.253:8080/swift/v1/1000-genomes-dataset/"+filename
     local_path = "/home/ubuntu/"+filename  
+    
 
     start_time_download = time.time()  
     for i in range(0,10):
@@ -31,19 +31,23 @@ def process(bam_file):
             urllib.urlretrieve(path,local_path)
             downloaded_check_sum = hashlib.md5(open(local_path, 'rb').read()).hexdigest()
             if str(check_sum) != str(downloaded_check_sum):
-		print "Checksum failed ", downloaded_check_sum, check_sum
+		print "Checksum failed on try ", i, filename
 	    else:
-		print "Checksum succeeded"
+		print "Checksum succeeded ", filename
 		break
         except:
-	       print "Failed to Download"
+	       print "Failed to Download on try ", i, filename
 
 
     start_time_mapping = time.time()  
     with pysam.AlignmentFile(local_path,"rb") as samfile:
+        j = 0
         try:
             data = samfile.fetch(until_eof=True)
             for r in data:
+                j+=1
+                if j > 1000000:
+                    break
                 if r.is_unmapped and not(r.mate_is_unmapped):
                     result_list.append(('POSITION', (r.reference_start, 1)))
                     start_pos = r.query_alignment_start
@@ -74,7 +78,7 @@ def main():
     configuration = SparkConf().setAppName("1000-genomes Project")
     spark_context = SparkContext(conf=configuration)
 
-    num_files = 2    
+    num_files = 100
 
     # Initializing variables
     container_name = "1000-genomes-dataset"
@@ -84,17 +88,19 @@ def main():
     (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
     names = filter(lambda t: t['name'][-4:] == '.bam', content)   
     filelist = [{"name" : c['name'].strip(), "hash" : c['hash'].strip()} for c in names[:num_files]]
-    
-    filenames = spark_context.parallelize(filelist)
-    mapped_data = filenames.flatMap(process).cache()
+
+    numpart = len(filelist)/2
+
+    filenames = spark_context.parallelize(filelist, numpart)
+    mapped_data = filenames.flatMap(process).persist(StorageLevel(True, True, False, True, 1))
 
     start_time_filtering = time.time()
-    kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add)
-    positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add)   
+    kmers = mapped_data.filter(lambda (k, (v, e)): k == "KMER").map(lambda (k, v): v).reduceByKey(add,numPartitions=5)
+    positions = mapped_data.filter(lambda (k,v): k == "POSITION").map(lambda (k, v): v).reduceByKey(add,numPartitions=5) 
 
     time_filtering = time.time() - start_time_filtering
-    time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").map(lambda (k, v): v).reduceByKey(add)
-    time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").map(lambda (k, v): v).reduceByKey(add)
+    time_mapping = mapped_data.filter(lambda (k,v): k == "TIME-MAPPING").map(lambda (k, v): v).reduceByKey(add,numPartitions=5)
+    time_download = mapped_data.filter(lambda (k,v): k == "TIME-DOWNLOAD").map(lambda (k, v): v).reduceByKey(add,numPartitions=5)
 
     time_mapping = time_mapping.collect()
     time_download = time_download.collect() 
