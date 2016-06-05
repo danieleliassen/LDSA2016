@@ -16,6 +16,7 @@
 
 ```
 git clone https://github.com/adamruul/arduino-project.git
+cd LDSA2016
 sudo ./start.sh
 ```
 
