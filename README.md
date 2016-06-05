@@ -9,19 +9,8 @@
 * Apache Spark
 * python-swiftclient
 * python-keystoneclient
-* config.py (defined as below)
-```python
-# config.py used to provide swiftclient with authentication.
-# Only due to issues with resolving environmental variables in Spark.
+* exported username, password, api_url for swift
 
-def main():
-  username = "hardcoded"
-  password = "hardcoded"
-	return { 'user':username,'key':password,'tenant_name':'c2016015','authurl': 'http://130.238.29.253:5000/v3'}
-
-if __name__ == '__main__':
-    main()
-```
 # Running it
 > The commands below assume that you already have set up a spark cluster and installed the prerequisites
 
