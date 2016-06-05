@@ -26,7 +26,7 @@ if __name__ == '__main__':
 > The commands below assume that you already have set up a spark cluster and installed the prerequisites
 
 ```
-git clone https://github.com/adamruul/arduino-project.git
+git clone https://github.com/adamruul/LDSA2016.git
 sudo ./spark-submit --master spark://pmo:7077 --driver-memory 6g --executor-memory 2g ~/LDSA2016/main.py
 ```
 
