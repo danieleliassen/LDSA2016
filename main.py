@@ -82,8 +82,11 @@ def main():
 
     # Initializing variables
     container_name = "1000-genomes-dataset"
-
-    conn = swiftclient.client.Connection(auth_version=3, **config.main())
+    config = {'user':os.environ['OS_USERNAME'], 
+          'key':os.environ['OS_PASSWORD'],
+          'tenant_name':os.environ['OS_TENANT_NAME'],
+          'authurl':os.environ['OS_AUTH_URL']}
+    conn = swiftclient.client.Connection(auth_version=3, **config)
     (storage_url, auth_token) = conn.get_auth()
     (response, content) = swiftclient.client.get_container(url=storage_url,container=container_name, token=auth_token)
     names = filter(lambda t: t['name'][-4:] == '.bam', content)   
