@@ -16,8 +16,7 @@
 
 ```
 git clone https://github.com/adamruul/arduino-project.git
-cd LDSA2016
-sudo ./start.sh
+sudo ./spark-submit --master spark://pmo:7077 --driver-memory 6g --executor-memory 2g ~/LDSA2016/main.py
 ```
 
 # Authors
